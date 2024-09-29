@@ -1,23 +1,24 @@
 const express = require('express');
 const app = express();
 const port = 3000;
-const mysql = require('mysql2/promise'); // MySQL library
-const mariadb = require('mariadb'); // MariaDB library
+const mariadb = require('mariadb');
 const bodyParser = require('body-parser');
-const { body, param, validationResult } = require('express-validator'); // Validation
+const { body, param, validationResult } = require('express-validator');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
+// Parse incoming JSON requests
 app.use(bodyParser.json());
 
-// MySQL connection pool (replace with MariaDB or MySQL based on your environment)
+// MariaDB connection pool setup
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'root', // Replace with your MySQL or MariaDB root password
-  database: 'sample', // Replace with your database name
-  port: 3306, // Default port for MySQL/MariaDB
-  connectionLimit: 5
+  password: 'root', // Your MariaDB root password
+  database: 'sample', // Your database name
+  port: 3306,
+  connectionLimit: 5,
+  bigNumberStrings: true // Convert BigInt values to string to avoid serialization issues
 });
 
 // Swagger setup
@@ -29,7 +30,7 @@ const options = {
       version: '1.0.0',
     },
   },
-  apis: ['./server.js'], // Paths to files for swagger docs
+  apis: ['./server.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -111,7 +112,7 @@ app.post('/customer',
     try {
       conn = await pool.getConnection();
       const {
-        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE,
         OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
       } = req.body;
 
@@ -122,7 +123,7 @@ app.post('/customer',
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const result = await conn.query(query, [
-        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE,
         OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
       ]);
 
@@ -291,7 +292,7 @@ app.put('/customer/:id',
     try {
       conn = await pool.getConnection();
       const {
-        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE,
         OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
       } = req.body;
 
@@ -302,7 +303,7 @@ app.put('/customer/:id',
         WHERE CUST_CODE = ?`;
 
       const result = await conn.query(query, [
-        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE,
         OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE, req.params.id
       ]);
 
