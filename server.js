@@ -235,7 +235,8 @@ app.patch('/customer/:id', [
     // Convert BigInt to string before sending response
     const formattedResult = {
       ...result,
-      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
+      affectedRows: result.affectedRows.toString(),  // Convert BigInt to string
+      insertId: result.insertId ? result.insertId.toString() : null  // Convert if exists
     };
 
     console.log("Formatted result:", formattedResult);
@@ -248,6 +249,7 @@ app.patch('/customer/:id', [
     if (conn) conn.release();
   }
 });
+
 
 /**
  * @swagger
@@ -353,7 +355,8 @@ app.put('/customer/:id', [
     // Convert BigInt to string before sending response
     const formattedResult = {
       ...result,
-      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
+      affectedRows: result.affectedRows.toString(),  // Convert BigInt to string
+      insertId: result.insertId ? result.insertId.toString() : null  // Convert if exists
     };
 
     res.json({ message: 'Customer replaced successfully!', result: formattedResult });
