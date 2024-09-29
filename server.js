@@ -243,7 +243,6 @@ app.patch('/customer/:id', [
     if (conn) conn.release();
   }
 });
-
 /**
  * @swagger
  * /customer/{id}:
@@ -356,7 +355,6 @@ app.put('/customer/:id', [
     if (conn) conn.release();
   }
 });
-
 /**
  * @swagger
  * /customer/{id}:
