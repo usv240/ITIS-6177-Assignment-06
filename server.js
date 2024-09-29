@@ -450,6 +450,127 @@ app.delete('/customer/:id',
   }
 );
 
+// GET request to retrieve an agent by AGENT_CODE
+app.get('/agent/:id', [
+  param('id').isString(),
+], async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const result = await conn.query("SELECT * FROM agents WHERE AGENT_CODE = ?", [req.params.id]);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    res.json(result[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// PUT request to replace an agent's data by AGENT_CODE
+app.put('/agent/:id', [
+  param('id').isString(),
+  body('AGENT_NAME').isString().notEmpty(),
+  body('WORKING_AREA').isString().optional(),
+  body('COMMISSION').isDecimal().optional(),
+  body('PHONE_NO').isString().optional(),
+  body('COUNTRY').isString().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const {
+      AGENT_NAME, WORKING_AREA, COMMISSION, PHONE_NO, COUNTRY
+    } = req.body;
+
+    const query = `
+      UPDATE agents 
+      SET AGENT_NAME = ?, WORKING_AREA = ?, COMMISSION = ?, PHONE_NO = ?, COUNTRY = ?
+      WHERE AGENT_CODE = ?`;
+
+    const result = await conn.query(query, [
+      AGENT_NAME, WORKING_AREA, COMMISSION, PHONE_NO, COUNTRY, req.params.id
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    res.json({ message: 'Agent updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+
+// GET request to retrieve a company by COMPANY_ID
+app.get('/company/:id', [
+  param('id').isString(),
+], async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const result = await conn.query("SELECT * FROM company WHERE COMPANY_ID = ?", [req.params.id]);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+
+    res.json(result[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// PUT request to replace a company's data by COMPANY_ID
+app.put('/company/:id', [
+  param('id').isString(),
+  body('COMPANY_NAME').isString().notEmpty(),
+  body('COMPANY_CITY').isString().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { COMPANY_NAME, COMPANY_CITY } = req.body;
+
+    const query = `
+      UPDATE company 
+      SET COMPANY_NAME = ?, COMPANY_CITY = ?
+      WHERE COMPANY_ID = ?`;
+
+    const result = await conn.query(query, [COMPANY_NAME, COMPANY_CITY, req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+
+    res.json({ message: 'Company updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+
 // Start the server
 app.listen(port, () => {
   console.log(`App running at http://localhost:${port}`);
