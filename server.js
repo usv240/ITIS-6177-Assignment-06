@@ -1,21 +1,22 @@
 const express = require('express');
 const app = express();
 const port = 3000;
-const mariadb = require('mariadb');
+const mysql = require('mysql2/promise'); // MySQL library
+const mariadb = require('mariadb'); // MariaDB library
 const bodyParser = require('body-parser');
-const { body, param, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator'); // Validation
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 app.use(bodyParser.json());
 
-// MariaDB connection pool
+// MySQL connection pool (replace with MariaDB or MySQL based on your environment)
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
   password: 'root', // Replace with your MySQL or MariaDB root password
   database: 'sample', // Replace with your database name
-  port: 3306,
+  port: 3306, // Default port for MySQL/MariaDB
   connectionLimit: 5
 });
 
@@ -86,8 +87,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *       500:
  *         description: Internal server error
  */
-// POST request to add a new customer
-app.post('/customer', [
+// POST request (Add a new customer)
+app.post('/customer',
   body('CUST_CODE').isString().notEmpty(),
   body('CUST_NAME').isString().notEmpty(),
   body('CUST_CITY').isString().optional(),
@@ -99,39 +100,40 @@ app.post('/customer', [
   body('PAYMENT_AMT').isDecimal().notEmpty(),
   body('OUTSTANDING_AMT').isDecimal().notEmpty(),
   body('PHONE_NO').isString().notEmpty(),
-  body('AGENT_CODE').isString().optional()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  body('AGENT_CODE').isString().optional(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const {
+        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+      } = req.body;
+
+      const query = `
+        INSERT INTO customer 
+        (CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+      const result = await conn.query(query, [
+        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+      ]);
+
+      res.status(201).json({ message: 'Customer added successfully!', result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (conn) conn.release();
+    }
   }
-
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const {
-      CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-    } = req.body;
-
-    const query = `
-      INSERT INTO customer 
-      (CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-    const result = await conn.query(query, [
-      CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-    ]);
-
-    res.status(201).json({ message: 'Customer added successfully!', result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
-  }
-});
+);
 
 /**
  * @swagger
@@ -173,8 +175,8 @@ app.post('/customer', [
  *       500:
  *         description: Internal server error
  */
-// PATCH request to update a customer's information
-app.patch('/customer/:id', [
+// PATCH request (Update a customer's information)
+app.patch('/customer/:id',
   param('id').isString(),
   body('CUST_CITY').isString().optional(),
   body('CUST_COUNTRY').isString().optional(),
@@ -182,37 +184,140 @@ app.patch('/customer/:id', [
   body('OPENING_AMT').isDecimal().optional(),
   body('RECEIVE_AMT').isDecimal().optional(),
   body('PAYMENT_AMT').isDecimal().optional(),
-  body('OUTSTANDING_AMT').isDecimal().optional()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const { CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT } = req.body;
-    const query = `
-      UPDATE customer 
-      SET CUST_CITY = ?, CUST_COUNTRY = ?, GRADE = ?, OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?
-      WHERE CUST_CODE = ?`;
-
-    const result = await conn.query(query, [
-      CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, req.params.id
-    ]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Customer not found' });
+  body('OUTSTANDING_AMT').isDecimal().optional(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    res.json({ message: 'Customer updated successfully!', result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const { CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT } = req.body;
+      const query = `
+        UPDATE customer 
+        SET CUST_CITY = ?, CUST_COUNTRY = ?, GRADE = ?, OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?
+        WHERE CUST_CODE = ?`;
+
+      const result = await conn.query(query, [
+        CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, req.params.id
+      ]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      res.json({ message: 'Customer updated successfully!', result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (conn) conn.release();
+    }
   }
-});
+);
+
+/**
+ * @swagger
+ * /customer/{id}:
+ *   put:
+ *     summary: Replace a customer's entire data
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               CUST_CODE:
+ *                 type: string
+ *               CUST_NAME:
+ *                 type: string
+ *               CUST_CITY:
+ *                 type: string
+ *               WORKING_AREA:
+ *                 type: string
+ *               CUST_COUNTRY:
+ *                 type: string
+ *               GRADE:
+ *                 type: number
+ *               OPENING_AMT:
+ *                 type: number
+ *               RECEIVE_AMT:
+ *                 type: number
+ *               PAYMENT_AMT:
+ *                 type: number
+ *               OUTSTANDING_AMT:
+ *                 type: number
+ *               PHONE_NO:
+ *                 type: string
+ *               AGENT_CODE:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Customer replaced successfully
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
+// PUT request (Replace a customer's entire data)
+app.put('/customer/:id',
+  param('id').isString(),
+  body('CUST_NAME').isString().notEmpty(),
+  body('CUST_CITY').isString().optional(),
+  body('WORKING_AREA').isString().notEmpty(),
+  body('CUST_COUNTRY').isString().notEmpty(),
+  body('GRADE').isDecimal().optional(),
+  body('OPENING_AMT').isDecimal().notEmpty(),
+  body('RECEIVE_AMT').isDecimal().notEmpty(),
+  body('PAYMENT_AMT').isDecimal().notEmpty(),
+  body('OUTSTANDING_AMT').isDecimal().notEmpty(),
+  body('PHONE_NO').isString().notEmpty(),
+  body('AGENT_CODE').isString().optional(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const {
+        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+      } = req.body;
+
+      const query = `
+        UPDATE customer 
+        SET CUST_NAME = ?, CUST_CITY = ?, WORKING_AREA = ?, CUST_COUNTRY = ?, GRADE = ?, 
+        OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?, PHONE_NO = ?, AGENT_CODE = ?
+        WHERE CUST_CODE = ?`;
+
+      const result = await conn.query(query, [
+        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE, req.params.id
+      ]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      res.json({ message: 'Customer replaced successfully!', result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+);
 
 /**
  * @swagger
@@ -233,26 +338,27 @@ app.patch('/customer/:id', [
  *       500:
  *         description: Internal server error
  */
-// GET request to fetch a customer by CUST_CODE
-app.get('/customer/:id', [
-  param('id').isString()
-], async (req, res) => {
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const result = await conn.query("SELECT * FROM customer WHERE CUST_CODE = ?", [req.params.id]);
+// GET request (Get customer by CUST_CODE)
+app.get('/customer/:id',
+  param('id').isString(),
+  async (req, res) => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const result = await conn.query("SELECT * FROM customer WHERE CUST_CODE = ?", [req.params.id]);
 
-    if (result.length === 0) {
-      return res.status(404).json({ message: 'Customer not found' });
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      res.json(result[0]);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (conn) conn.release();
     }
-
-    res.json(result[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
   }
-});
+);
 
 /**
  * @swagger
@@ -273,26 +379,27 @@ app.get('/customer/:id', [
  *       500:
  *         description: Internal server error
  */
-// DELETE request to delete a customer by CUST_CODE
-app.delete('/customer/:id', [
-  param('id').isString()
-], async (req, res) => {
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const result = await conn.query("DELETE FROM customer WHERE CUST_CODE = ?", [req.params.id]);
+// DELETE request (Delete customer by CUST_CODE)
+app.delete('/customer/:id',
+  param('id').isString(),
+  async (req, res) => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const result = await conn.query("DELETE FROM customer WHERE CUST_CODE = ?", [req.params.id]);
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Customer not found' });
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      res.json({ message: 'Customer deleted successfully!' });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (conn) conn.release();
     }
-
-    res.json({ message: 'Customer deleted successfully!' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
   }
-});
+);
 
 // Start the server
 app.listen(port, () => {
