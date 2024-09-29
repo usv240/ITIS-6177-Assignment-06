@@ -125,17 +125,7 @@ app.post('/customer', [
       OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
     ]);
 
-    // Convert BigInt to string if necessary
-    const serializedResult = result.map(row => {
-      for (let key in row) {
-        if (typeof row[key] === 'bigint') {
-          row[key] = row[key].toString();
-        }
-      }
-      return row;
-    });
-
-    res.status(201).json({ message: 'Customer added successfully!', result: serializedResult });
+    res.status(201).json({ message: 'Customer added successfully!', result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
@@ -217,106 +207,6 @@ app.patch('/customer/:id', [
     }
 
     res.json({ message: 'Customer updated successfully!', result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-/**
- * @swagger
- * /customer/{id}:
- *   put:
- *     summary: Replace a customer's entire data
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               CUST_CODE:
- *                 type: string
- *               CUST_NAME:
- *                 type: string
- *               CUST_CITY:
- *                 type: string
- *               WORKING_AREA:
- *                 type: string
- *               CUST_COUNTRY:
- *                 type: string
- *               GRADE:
- *                 type: number
- *               OPENING_AMT:
- *                 type: number
- *               RECEIVE_AMT:
- *                 type: number
- *               PAYMENT_AMT:
- *                 type: number
- *               OUTSTANDING_AMT:
- *                 type: number
- *               PHONE_NO:
- *                 type: string
- *               AGENT_CODE:
- *                 type: string
- *     responses:
- *       200:
- *         description: Customer replaced successfully
- *       404:
- *         description: Customer not found
- *       500:
- *         description: Internal server error
- */
-// PUT request to replace a customer's data
-app.put('/customer/:id', [
-  param('id').isString(),
-  body('CUST_NAME').isString().notEmpty(),
-  body('WORKING_AREA').isString().notEmpty(),
-  body('CUST_COUNTRY').isString().notEmpty(),
-  body('GRADE').isDecimal().optional(),
-  body('OPENING_AMT').isDecimal().notEmpty(),
-  body('RECEIVE_AMT').isDecimal().notEmpty(),
-  body('PAYMENT_AMT').isDecimal().notEmpty(),
-  body('OUTSTANDING_AMT').isDecimal().notEmpty(),
-  body('PHONE_NO').isString().notEmpty(),
-  body('AGENT_CODE').isString().optional()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const {
-      CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-    } = req.body;
-
-    const query = `
-      UPDATE customer 
-      SET CUST_NAME = ?, CUST_CITY = ?, WORKING_AREA = ?, CUST_COUNTRY = ?, GRADE = ?, 
-      OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?, PHONE_NO = ?, AGENT_CODE = ?
-      WHERE CUST_CODE = ?`;
-
-    const result = await conn.query(query, [
-      CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE, req.params.id
-    ]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-
-    res.json({ message: 'Customer replaced successfully!', result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
