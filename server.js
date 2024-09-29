@@ -87,8 +87,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *       500:
  *         description: Internal server error
  */
-// POST request (Add a new customer)
-app.post('/customer',
+// POST request to add a new customer
+app.post('/customer', [
   body('CUST_CODE').isString().notEmpty(),
   body('CUST_NAME').isString().notEmpty(),
   body('CUST_CITY').isString().optional(),
@@ -100,40 +100,53 @@ app.post('/customer',
   body('PAYMENT_AMT').isDecimal().notEmpty(),
   body('OUTSTANDING_AMT').isDecimal().notEmpty(),
   body('PHONE_NO').isString().notEmpty(),
-  body('AGENT_CODE').isString().optional(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const {
-        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-      } = req.body;
-
-      const query = `
-        INSERT INTO customer 
-        (CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-      const result = await conn.query(query, [
-        CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-      ]);
-
-      res.status(201).json({ message: 'Customer added successfully!', result });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    } finally {
-      if (conn) conn.release();
-    }
+  body('AGENT_CODE').isString().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log("Validation errors:", errors.array());
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+
+  let conn;
+  try {
+    console.log("Received customer data:", req.body);
+    conn = await pool.getConnection();
+    
+    const {
+      CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+    } = req.body;
+
+    const query = `
+      INSERT INTO customer 
+      (CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    console.log("Executing query:", query);
+
+    const result = await conn.query(query, [
+      CUST_CODE, CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+    ]);
+
+    console.log("Query result:", result);
+    res.status(201).json({ message: 'Customer added successfully!', result });
+
+  } catch (err) {
+    console.error("Error adding customer:", err);
+    
+    // Handle BigInt serialization issue
+    if (err.message.includes("BigInt")) {
+      res.status(500).json({ error: "BigInt serialization issue, please convert BigInt to string or number" });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 /**
  * @swagger
