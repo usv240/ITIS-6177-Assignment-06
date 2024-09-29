@@ -1,24 +1,23 @@
 const express = require('express');
 const app = express();
 const port = 3000;
-const mariadb = require('mariadb');
+const mariadb = require('mariadb'); // MariaDB library
 const bodyParser = require('body-parser');
-const { body, param, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator'); // Validation
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
-// Parse incoming JSON requests
 app.use(bodyParser.json());
 
-// MariaDB connection pool setup
+// MariaDB connection pool
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'root', // Your MariaDB root password
-  database: 'sample', // Your database name
-  port: 3306,
+  password: 'root', // Replace with your MariaDB root password
+  database: 'sample', // Replace with your database name
+  port: 3306, // Default port for MariaDB
   connectionLimit: 5,
-  bigNumberStrings: true // Convert BigInt values to string to avoid serialization issues
+  bigNumberStrings: true, // This ensures BigInt is treated as a string
 });
 
 // Swagger setup
@@ -30,11 +29,23 @@ const options = {
       version: '1.0.0',
     },
   },
-  apis: ['./server.js'],
+  apis: ['./server.js'], // Paths to files for swagger docs
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/**
+ * Utility function to convert BigInt values to strings
+ */
+function handleBigInt(obj) {
+  for (let key in obj) {
+    if (typeof obj[key] === 'bigint') {
+      obj[key] = obj[key].toString(); // Convert BigInt to string
+    }
+  }
+  return obj;
+}
 
 /**
  * @swagger
@@ -66,22 +77,16 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *                 type: number
  *               OPENING_AMT:
  *                 type: number
- *                 description: Opening amount
  *               RECEIVE_AMT:
  *                 type: number
- *                 description: Receive amount
  *               PAYMENT_AMT:
  *                 type: number
- *                 description: Payment amount
  *               OUTSTANDING_AMT:
  *                 type: number
- *                 description: Outstanding amount
  *               PHONE_NO:
  *                 type: string
- *                 description: Phone number of the customer
  *               AGENT_CODE:
  *                 type: string
- *                 description: Agent code
  *     responses:
  *       201:
  *         description: Customer added successfully
@@ -352,7 +357,10 @@ app.get('/customer/:id',
         return res.status(404).json({ message: 'Customer not found' });
       }
 
-      res.json(result[0]);
+      // Convert BigInt fields to string
+      const customerData = handleBigInt(result[0]);
+
+      res.json(customerData);
     } catch (err) {
       res.status(500).json({ error: err.message });
     } finally {
