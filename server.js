@@ -450,7 +450,6 @@ app.delete('/customer/:id',
   }
 );
 
-
 /**
  * @swagger
  * /agent:
@@ -525,7 +524,13 @@ app.post('/agent', [
 
     console.log("Query result:", result);
 
-    res.status(201).json({ message: 'Agent added successfully!', result });
+    // Convert BigInt values (like insertId) to strings
+    const formattedResult = {
+      ...result,
+      insertId: result.insertId ? result.insertId.toString() : null // Convert BigInt to string if it exists
+    };
+
+    res.status(201).json({ message: 'Agent added successfully!', result: formattedResult });
   } catch (err) {
     console.error("Error adding agent:", err);
     res.status(500).json({ error: err.message });
@@ -533,6 +538,7 @@ app.post('/agent', [
     if (conn) conn.release();
   }
 });
+
 
 
 /**
