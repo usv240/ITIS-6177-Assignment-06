@@ -9,6 +9,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 app.use(bodyParser.json());
 
+// MariaDB connection pool
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
@@ -33,6 +34,33 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+/**
+ * @swagger
+ * /customer:
+ *   post:
+ *     summary: Add a new customer
+ *     description: Adds a new customer to the database.
+ *     tags:
+ *       - Customers
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               CUST_NAME:
+ *                 type: string
+ *               CUST_CITY:
+ *                 type: string
+ *               WORKING_AREA:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Customer added successfully
+ *       500:
+ *         description: Internal server error
+ */
 // POST request (Add a new customer)
 app.post('/customer',
   body('CUST_NAME').isString().notEmpty(), // Validate
@@ -58,6 +86,34 @@ app.post('/customer',
     }
 });
 
+/**
+ * @swagger
+ * /customer/{id}:
+ *   patch:
+ *     summary: Update a customer's city
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               CUST_CITY:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Customer updated successfully
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 // PATCH request (Update a customer's city)
 app.patch('/customer/:id',
   param('id').isInt(),
@@ -87,6 +143,38 @@ app.patch('/customer/:id',
     }
 });
 
+/**
+ * @swagger
+ * /customer/{id}:
+ *   put:
+ *     summary: Replace a customer
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               CUST_NAME:
+ *                 type: string
+ *               CUST_CITY:
+ *                 type: string
+ *               WORKING_AREA:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Customer replaced successfully
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 // PUT request (Replace a customer)
 app.put('/customer/:id',
   param('id').isInt(),
@@ -118,6 +206,25 @@ app.put('/customer/:id',
     }
 });
 
+/**
+ * @swagger
+ * /customer/{id}:
+ *   delete:
+ *     summary: Delete a customer
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Customer deleted successfully
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 // DELETE request (Remove a customer)
 app.delete('/customer/:id',
   param('id').isInt(),
@@ -139,6 +246,25 @@ app.delete('/customer/:id',
     }
 });
 
+/**
+ * @swagger
+ * /customers/city/{city}:
+ *   get:
+ *     summary: Get customers by city
+ *     parameters:
+ *       - in: path
+ *         name: city
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of customers
+ *       404:
+ *         description: No customers found
+ *       500:
+ *         description: Internal server error
+ */
 // GET customers by city (Sanitized Input Example)
 app.get('/customers/city/:city',
   param('city').isString().trim().escape(),
