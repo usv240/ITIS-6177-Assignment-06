@@ -11,7 +11,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 app.use(bodyParser.json());
 
 // MySQL connection pool (replace with MariaDB or MySQL based on your environment)
-const pool = mariadb.createPool({
+const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '0000', // Replace with your MySQL or MariaDB root password
