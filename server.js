@@ -132,21 +132,23 @@ app.post('/customer', [
     ]);
 
     console.log("Query result:", result);
-    res.status(201).json({ message: 'Customer added successfully!', result });
+
+    // Convert BigInt to string before sending response
+    const formattedResult = {
+      ...result,
+      insertId: result.insertId.toString()  // Convert BigInt to string
+    };
+
+    res.status(201).json({ message: 'Customer added successfully!', result: formattedResult });
 
   } catch (err) {
     console.error("Error adding customer:", err);
-    
-    // Handle BigInt serialization issue
-    if (err.message.includes("BigInt")) {
-      res.status(500).json({ error: "BigInt serialization issue, please convert BigInt to string or number" });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
+    res.status(500).json({ error: err.message });
   } finally {
     if (conn) conn.release();
   }
 });
+
 
 /**
  * @swagger
