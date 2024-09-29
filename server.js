@@ -450,6 +450,26 @@ app.delete('/customer/:id',
   }
 );
 
+/**
+ * @swagger
+ * /agent/{id}:
+ *   get:
+ *     summary: Get an agent by AGENT_CODE
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Agent details
+ *       404:
+ *         description: Agent not found
+ *       500:
+ *         description: Internal server error
+ */
+
 // GET request to retrieve an agent by AGENT_CODE
 app.get('/agent/:id', [
   param('id').isString(),
@@ -470,6 +490,44 @@ app.get('/agent/:id', [
     if (conn) conn.release();
   }
 });
+
+
+/**
+ * @swagger
+ * /agent/{id}:
+ *   put:
+ *     summary: Replace an agent's entire data
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               AGENT_NAME:
+ *                 type: string
+ *               WORKING_AREA:
+ *                 type: string
+ *               COMMISSION:
+ *                 type: number
+ *               PHONE_NO:
+ *                 type: string
+ *               COUNTRY:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Agent replaced successfully
+ *       404:
+ *         description: Agent not found
+ *       500:
+ *         description: Internal server error
+ */
 
 // PUT request to replace an agent's data by AGENT_CODE
 app.put('/agent/:id', [
@@ -513,7 +571,25 @@ app.put('/agent/:id', [
   }
 });
 
-
+/**
+ * @swagger
+ * /company/{id}:
+ *   get:
+ *     summary: Get a company by COMPANY_ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company details
+ *       404:
+ *         description: Company not found
+ *       500:
+ *         description: Internal server error
+ */
 // GET request to retrieve a company by COMPANY_ID
 app.get('/company/:id', [
   param('id').isString(),
@@ -535,6 +611,36 @@ app.get('/company/:id', [
   }
 });
 
+/**
+ * @swagger
+ * /company/{id}:
+ *   put:
+ *     summary: Replace a company's entire data
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               COMPANY_NAME:
+ *                 type: string
+ *               COMPANY_CITY:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Company replaced successfully
+ *       404:
+ *         description: Company not found
+ *       500:
+ *         description: Internal server error
+ */
 // PUT request to replace a company's data by COMPANY_ID
 app.put('/company/:id', [
   param('id').isString(),
