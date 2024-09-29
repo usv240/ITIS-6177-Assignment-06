@@ -347,7 +347,23 @@ app.put('/customer/:id', [
 
     if (result.affectedRows === 0) {
       console.log("Customer not found with CUST_CODE:", req.params.id);
-     
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Convert BigInt to string before sending response
+    const formattedResult = {
+      ...result,
+      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
+    };
+
+    res.json({ message: 'Customer replaced successfully!', result: formattedResult });
+  } catch (err) {
+    console.error("Error during PUT request:", err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 /**
  * @swagger
