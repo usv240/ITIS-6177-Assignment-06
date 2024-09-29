@@ -203,6 +203,7 @@ app.patch('/customer/:id', [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("Validation errors:", errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -210,7 +211,7 @@ app.patch('/customer/:id', [
   try {
     console.log("Received update data:", req.body);
     conn = await pool.getConnection();
-    
+
     const { CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT } = req.body;
 
     const query = `
@@ -227,6 +228,7 @@ app.patch('/customer/:id', [
     console.log("Query result:", result);
 
     if (result.affectedRows === 0) {
+      console.log("Customer not found with CUST_CODE:", req.params.id);
       return res.status(404).json({ message: 'Customer not found' });
     }
 
@@ -236,13 +238,17 @@ app.patch('/customer/:id', [
       affectedRows: result.affectedRows.toString()  // Convert BigInt to string
     };
 
+    console.log("Formatted result:", formattedResult);
+
     res.json({ message: 'Customer updated successfully!', result: formattedResult });
   } catch (err) {
+    console.error("Error during PATCH request:", err);
     res.status(500).json({ error: err.message });
   } finally {
     if (conn) conn.release();
   }
 });
+
 /**
  * @swagger
  * /customer/{id}:
@@ -310,6 +316,7 @@ app.put('/customer/:id', [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("Validation errors:", errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -339,22 +346,9 @@ app.put('/customer/:id', [
     console.log("Query result:", result);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
+      console.log("Customer not found with CUST_CODE:", req.params.id);
+     
 
-    // Convert BigInt to string before sending response
-    const formattedResult = {
-      ...result,
-      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
-    };
-
-    res.json({ message: 'Customer replaced successfully!', result: formattedResult });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (conn) conn.release();
-  }
-});
 /**
  * @swagger
  * /customer/{id}:
