@@ -191,7 +191,7 @@ app.post('/customer', [
  *         description: Internal server error
  */
 // PATCH request (Update a customer's information)
-app.patch('/customer/:id',
+app.patch('/customer/:id', [
   param('id').isString(),
   body('CUST_CITY').isString().optional(),
   body('CUST_COUNTRY').isString().optional(),
@@ -199,38 +199,50 @@ app.patch('/customer/:id',
   body('OPENING_AMT').isDecimal().optional(),
   body('RECEIVE_AMT').isDecimal().optional(),
   body('PAYMENT_AMT').isDecimal().optional(),
-  body('OUTSTANDING_AMT').isDecimal().optional(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const { CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT } = req.body;
-      const query = `
-        UPDATE customer 
-        SET CUST_CITY = ?, CUST_COUNTRY = ?, GRADE = ?, OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?
-        WHERE CUST_CODE = ?`;
-
-      const result = await conn.query(query, [
-        CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, req.params.id
-      ]);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Customer not found' });
-      }
-
-      res.json({ message: 'Customer updated successfully!', result });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    } finally {
-      if (conn) conn.release();
-    }
+  body('OUTSTANDING_AMT').isDecimal().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+
+  let conn;
+  try {
+    console.log("Received update data:", req.body);
+    conn = await pool.getConnection();
+    
+    const { CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT } = req.body;
+
+    const query = `
+      UPDATE customer 
+      SET CUST_CITY = ?, CUST_COUNTRY = ?, GRADE = ?, OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?
+      WHERE CUST_CODE = ?`;
+
+    console.log("Executing query:", query);
+
+    const result = await conn.query(query, [
+      CUST_CITY, CUST_COUNTRY, GRADE, OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, req.params.id
+    ]);
+
+    console.log("Query result:", result);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Convert BigInt to string before sending response
+    const formattedResult = {
+      ...result,
+      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
+    };
+
+    res.json({ message: 'Customer updated successfully!', result: formattedResult });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 /**
  * @swagger
@@ -283,7 +295,7 @@ app.patch('/customer/:id',
  *         description: Internal server error
  */
 // PUT request (Replace a customer's entire data)
-app.put('/customer/:id',
+app.put('/customer/:id', [
   param('id').isString(),
   body('CUST_NAME').isString().notEmpty(),
   body('CUST_CITY').isString().optional(),
@@ -295,44 +307,55 @@ app.put('/customer/:id',
   body('PAYMENT_AMT').isDecimal().notEmpty(),
   body('OUTSTANDING_AMT').isDecimal().notEmpty(),
   body('PHONE_NO').isString().notEmpty(),
-  body('AGENT_CODE').isString().optional(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const {
-        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
-      } = req.body;
-
-      const query = `
-        UPDATE customer 
-        SET CUST_NAME = ?, CUST_CITY = ?, WORKING_AREA = ?, CUST_COUNTRY = ?, GRADE = ?, 
-        OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?, PHONE_NO = ?, AGENT_CODE = ?
-        WHERE CUST_CODE = ?`;
-
-      const result = await conn.query(query, [
-        CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
-        OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE, req.params.id
-      ]);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Customer not found' });
-      }
-
-      res.json({ message: 'Customer replaced successfully!', result });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    } finally {
-      if (conn) conn.release();
-    }
+  body('AGENT_CODE').isString().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+
+  let conn;
+  try {
+    console.log("Received replace data:", req.body);
+    conn = await pool.getConnection();
+
+    const {
+      CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE
+    } = req.body;
+
+    const query = `
+      UPDATE customer 
+      SET CUST_NAME = ?, CUST_CITY = ?, WORKING_AREA = ?, CUST_COUNTRY = ?, GRADE = ?, 
+      OPENING_AMT = ?, RECEIVE_AMT = ?, PAYMENT_AMT = ?, OUTSTANDING_AMT = ?, PHONE_NO = ?, AGENT_CODE = ?
+      WHERE CUST_CODE = ?`;
+
+    console.log("Executing query:", query);
+
+    const result = await conn.query(query, [
+      CUST_NAME, CUST_CITY, WORKING_AREA, CUST_COUNTRY, GRADE, 
+      OPENING_AMT, RECEIVE_AMT, PAYMENT_AMT, OUTSTANDING_AMT, PHONE_NO, AGENT_CODE, req.params.id
+    ]);
+
+    console.log("Query result:", result);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Convert BigInt to string before sending response
+    const formattedResult = {
+      ...result,
+      affectedRows: result.affectedRows.toString()  // Convert BigInt to string
+    };
+
+    res.json({ message: 'Customer replaced successfully!', result: formattedResult });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 /**
  * @swagger
