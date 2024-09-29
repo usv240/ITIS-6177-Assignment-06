@@ -450,6 +450,91 @@ app.delete('/customer/:id',
   }
 );
 
+
+/**
+ * @swagger
+ * /agent:
+ *   post:
+ *     summary: Add a new agent
+ *     description: Adds a new agent to the database.
+ *     tags:
+ *       - Agents
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               AGENT_CODE:
+ *                 type: string
+ *                 description: The unique code of the agent
+ *               AGENT_NAME:
+ *                 type: string
+ *                 description: Name of the agent
+ *               WORKING_AREA:
+ *                 type: string
+ *                 description: Working area of the agent
+ *               COMMISSION:
+ *                 type: number
+ *                 description: Commission percentage of the agent
+ *               PHONE_NO:
+ *                 type: string
+ *                 description: Phone number of the agent
+ *               COUNTRY:
+ *                 type: string
+ *                 description: Country of the agent
+ *     responses:
+ *       201:
+ *         description: Agent added successfully
+ *       400:
+ *         description: Validation errors
+ *       500:
+ *         description: Internal server error
+ */
+app.post('/agent', [
+  body('AGENT_CODE').isString().notEmpty(),
+  body('AGENT_NAME').isString().notEmpty(),
+  body('WORKING_AREA').isString().optional(),
+  body('COMMISSION').isDecimal().optional(),
+  body('PHONE_NO').isString().optional(),
+  body('COUNTRY').isString().optional()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let conn;
+  try {
+    console.log("Received agent data:", req.body);
+    conn = await pool.getConnection();
+
+    const {
+      AGENT_CODE, AGENT_NAME, WORKING_AREA, COMMISSION, PHONE_NO, COUNTRY
+    } = req.body;
+
+    const query = `
+      INSERT INTO agents 
+      (AGENT_CODE, AGENT_NAME, WORKING_AREA, COMMISSION, PHONE_NO, COUNTRY)
+      VALUES (?, ?, ?, ?, ?, ?)`;
+
+    const result = await conn.query(query, [
+      AGENT_CODE, AGENT_NAME, WORKING_AREA, COMMISSION, PHONE_NO, COUNTRY
+    ]);
+
+    console.log("Query result:", result);
+
+    res.status(201).json({ message: 'Agent added successfully!', result });
+  } catch (err) {
+    console.error("Error adding agent:", err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+
 /**
  * @swagger
  * /agent/{id}:
