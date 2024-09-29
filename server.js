@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
-  password: '0000', // Replace with your MySQL or MariaDB root password
+  password: 'root', // Replace with your MySQL or MariaDB root password
   database: 'sample', // Replace with your database name
   port: 3306, // Default port for MySQL/MariaDB
   connectionLimit: 5
